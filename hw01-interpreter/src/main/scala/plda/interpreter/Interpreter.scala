@@ -3,7 +3,6 @@ package plda.interpreter
 import plda.ast._
 import plda.interpreter.exception.EvaluationException
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 

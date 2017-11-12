@@ -45,7 +45,7 @@ object InterpreterTests {
             `if`(op(n, Eq, const(0)),
               const(1),
               op(n, Mul, apply(eval("fact"), Map("n" -> op(n, Sub, const(1))))))
-          })), apply(eval("fact"), Map("n" -> const(30)))
+          })), apply(eval("fact"), Map("n" -> const(20)))
         )
       }
     }
