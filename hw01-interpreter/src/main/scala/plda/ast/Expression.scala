@@ -9,7 +9,7 @@ sealed trait Expression
 
 case class const(value: Int) extends Expression
 
-case class eval(symbol: String, environment: Map[String, Expression]) extends Expression
+case class eval(symbol: String) extends Expression
 
 case class op(lhs: Expression, binaryOperator: BinaryOperator, rhs: Expression) extends Expression
 
@@ -17,6 +17,8 @@ case class `if`(condition: Expression, trueBranch: Expression, falseBranch: Expr
 
 case class let(bindings: Map[String, Expression], body: Expression) extends Expression
 
-case class λ(params: List[String], body: Expression) extends Expression
+case class λ(params: List[String], body: Expression, environment: Map[String, Expression] = Map()) extends Expression
 
-case class apply(fn: Expression, parameters: Expression*) extends Expression
+case class apply(fn: Expression, parameters: Map[String, Expression]) extends Expression
+
+case class undef(message: String) extends Expression
