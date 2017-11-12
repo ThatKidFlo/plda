@@ -1,6 +1,8 @@
 package plda.interpreter
 
 import plda.ast._
+import plda.config.Constants.Logging._
+import plda.config.Constants.{Interpreter => InterpreterConfig}
 import plda.interpreter.exception.EvaluationException
 
 import scala.collection.mutable
@@ -21,10 +23,10 @@ object Interpreter {
 
       case eval(name) =>
         val evaluatedSymbol = environment.get(name)
-        println(s"Searched for $name in $environment, found $evaluatedSymbol")
+        debug(s"Evaluating symbol $name in environment ${prettify(environment)}, found $evaluatedSymbol")
         evaluatedSymbol
           .map(evaluated => interpretInternal(evaluated, environment))
-          .getOrElse(failed(s"symbol $name was not found in $environment"))
+          .getOrElse(failed(s"${ERROR_LEVEL}symbol $name was not found in ${prettify(environment)}"))
 
       case op(lhs, binaryOperator, rhs) =>
         val triedOpEvaluation: Try[Either[const, λ]] = for {
@@ -34,26 +36,27 @@ object Interpreter {
           evaluatedLhs -> evaluatedRhs match {
             case (Left(x1), Left(x2)) => Left(binaryOperator.apply(x1.value, x2.value))
             case _ => throw new EvaluationException(
-              s"""Unable to compare non-numeric values::
-                 | left-hand side: $evaluatedLhs
-                 | right-hand side: $evaluatedRhs
-            """.stripMargin)
+              s"${ERROR_LEVEL}Unable to compare non-numeric values:: left-hand side: <$evaluatedLhs>, " +
+                s"right-hand side: <$evaluatedRhs>")
           }
         }
 
         triedOpEvaluation
           .transform(
             Success(_),
-            _ => Failure(new EvaluationException(
-              s"""Unable to compare non-numeric values::
-                 | left-hand side: $lhs
-                 | right-hand side: $rhs
-            """.stripMargin)))
+            _ => Failure {
+              new EvaluationException(s"${ERROR_LEVEL}Unable to compare non-numeric values:: " +
+                s"left-hand side: <$lhs>, right-hand side: <$rhs>")
+            })
 
       case `if`(condition, trueBranch, falseBranch) =>
         interpretInternal(condition, environment) match {
-          case Success(Left(const(0))) => interpretInternal(falseBranch, environment)
-          case _ => interpretInternal(trueBranch, environment)
+          case Success(Left(const(0))) =>
+            debug(s"Condition $condition evaluated to false, will evaluate the false branch")
+            interpretInternal(falseBranch, environment)
+          case _ =>
+            debug(s"Condition $condition evaluated to true, will evaluate the true branch")
+            interpretInternal(trueBranch, environment)
         }
 
       case let(bindings, body) =>
@@ -67,8 +70,9 @@ object Interpreter {
           case Right(λ(_, body)) =>
             interpretInternal(body, environment ++ evaluateParameters(parameters, environment))
           case Left(expr) =>
-            println(s"$expr is gonna throw an exception, because non-function values cannot be applied")
-            throw new EvaluationException(s"Unable to apply non-function value $expr to $parameters")
+            debug(s"Interpretation will terminated, because non-function value $expr " +
+              s"cannot be applied to ${prettify(parameters)}")
+            throw new EvaluationException(s"Unable to apply non-function value $expr to ${prettify(parameters)}")
         }
     }
 
@@ -94,4 +98,12 @@ object Interpreter {
   private def foundLambda(lambda: λ) = Success(Right(lambda))
 
   private def failed(message: String) = Failure(new EvaluationException(s"Program crashed:: $message"))
+
+  private def debug(msg: => String): Unit = {
+    if (InterpreterConfig.DEBUG) println {
+      s"${DEBUG_LEVEL}$msg"
+    }
+  }
+
+  private def prettify(environment: Map[String, Expression]): String = environment.mkString("[", ", ", "]")
 }
