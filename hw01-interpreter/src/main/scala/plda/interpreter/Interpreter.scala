@@ -101,7 +101,7 @@ object Interpreter {
 
   private def debug(msg: => String): Unit = {
     if (InterpreterConfig.DEBUG) println {
-      s"${DEBUG_LEVEL}$msg"
+      s"$DEBUG_LEVEL$msg"
     }
   }
 
