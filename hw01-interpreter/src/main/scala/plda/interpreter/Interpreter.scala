@@ -58,13 +58,14 @@ object Interpreter {
           case Right(λ(_, body)) =>
             interpretInternal(body, environment ++ evaluateParameters(parameters, environment))
           case Left(expr) =>
-            println(s"gonna throw $expr, because $environment")
+            println(s"$expr is gonna throw an exception, because non-function values cannot be applied")
             throw new EvaluationException(s"Unable to apply non-function value $expr to $parameters")
         }
     }
 
   private def evaluateParameters(parameters: Map[String, Expression],
                                  environment: Map[String, Expression]): Map[String, Expression] = {
+    //TODO:: maybe it would be nice to be lazy instead, and not evaluate parameters unless actually required
     parameters
       .map {
         case (name, expr) => name -> interpretInternal(expr, environment)

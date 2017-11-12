@@ -26,17 +26,68 @@ class InterpreterSpec extends FlatSpec with Matchers {
     })
   }
 
+  it should "correctly apply a binary operator to two constants" in {
+    val triedInterpretedMultiplication = interpret {
+      let(Map("x" -> const(21), "y" -> const(2)), {
+        op(eval("x"), Mul, eval("y"))
+      })
+    }
+
+    expectConst(42, triedInterpretedMultiplication)
+  }
+
+  it should "evaluate the true branch for a true condition in an if statement" in {
+    val triedInterpretedIf = interpret {
+      `if`(op(const(0), Eq, const(0)), const(42), const(1))
+    }
+
+    expectConst(42, triedInterpretedIf)
+  }
+
+  it should "evaluate the false branch for a false condition in an if statement" in {
+    val triedInterpretedIf = interpret {
+      `if`(op(const(42), Eq, const(0)), const(0), const(42))
+    }
+
+    expectConst(42, triedInterpretedIf)
+  }
+
   it should "correctly define factorial" in {
+    val triedInterpretedFact = interpret {
+      λ(List("n"), {
+        val n = eval("n")
+        `if`(op(n, Eq, const(0)),
+          const(1),
+          op(n, Mul, apply(eval("fact"), Map("n" -> op(n, Sub, const(1))))))
+      })
+    }
+
     expectLambda {
-      interpret {
-        λ(List("n"), {
+      triedInterpretedFact
+    }
+
+    val factorial = triedInterpretedFact.get.right.get
+
+    interpret {
+      apply(factorial, Map("n" -> const(10), "fact" -> factorial))
+    } should be {
+      Success(Left(const(3628800)))
+    }
+  }
+
+  it should "bind a function to a symbol, and correctly evaluate it" in {
+    val evaluatedFactorial = interpret {
+      let(
+        Map("fact" -> λ(List("n"), {
           val n = eval("n")
           `if`(op(n, Eq, const(0)),
             const(1),
             op(n, Mul, apply(eval("fact"), Map("n" -> op(n, Sub, const(1))))))
-        })
-      }
+        })), apply(eval("fact"), Map("n" -> const(5)))
+      )
     }
+
+    expectConst(120, evaluatedFactorial)
   }
 
   private def expectConst(value: Int, interpretationResult: Try[Either[const, λ]]) = {
