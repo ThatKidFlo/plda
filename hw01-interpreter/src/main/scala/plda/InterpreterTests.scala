@@ -11,6 +11,12 @@ import plda.interpreter.Interpreter._
 object InterpreterTests {
   def main(args: Array[String]): Unit = {
     println {
+      interpret {
+        op(λ(List(), const(42)), Eq, const(42))
+      }
+    }
+
+    println {
       interpret(`if`(op(const(1), Eq, const(1)), const(1), const(2)))
     }
 

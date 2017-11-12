@@ -27,7 +27,7 @@ object Interpreter {
           .getOrElse(failed(s"symbol $name was not found in $environment"))
 
       case op(lhs, binaryOperator, rhs) =>
-        for {
+        val triedOpEvaluation: Try[Either[const, λ]] = for {
           evaluatedLhs <- interpretInternal(lhs, environment) if evaluatedLhs.isInstanceOf[Left[const, λ]]
           evaluatedRhs <- interpretInternal(rhs, environment)
         } yield {
@@ -40,6 +40,15 @@ object Interpreter {
             """.stripMargin)
           }
         }
+
+        triedOpEvaluation
+          .transform(
+            Success(_),
+            _ => Failure(new EvaluationException(
+              s"""Unable to compare non-numeric values::
+                 | left-hand side: $lhs
+                 | right-hand side: $rhs
+            """.stripMargin)))
 
       case `if`(condition, trueBranch, falseBranch) =>
         interpretInternal(condition, environment) match {
@@ -74,7 +83,7 @@ object Interpreter {
         case ((name, Success(Left(constant))), env) => env + (name -> constant)
         case ((name, Success(Right(function))), env) => env + (name -> function)
 
-          //TODO:: could be more permissive here, in case the formal parameter is not actually used
+        //TODO:: could be more permissive here, in case the formal parameter is not actually used
         case ((name, Failure(err)), _) =>
           throw new EvaluationException(s"Failed to evaluate parameter $name due to $err")
       }.toMap
