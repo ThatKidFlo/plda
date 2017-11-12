@@ -5,7 +5,6 @@ import plda.config.Constants.Logging._
 import plda.config.Constants.{Interpreter => InterpreterConfig}
 import plda.interpreter.exception.EvaluationException
 
-import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -83,14 +82,14 @@ object Interpreter {
       .map {
         case (name, expr) => name -> interpretInternal(expr, environment)
       }
-      .foldRight(mutable.Map[String, Expression]()) {
+      .foldRight(Map[String, Expression]()) {
         case ((name, Success(Left(constant))), env) => env + (name -> constant)
         case ((name, Success(Right(function))), env) => env + (name -> function)
 
         //TODO:: could be more permissive here, in case the formal parameter is not actually used
         case ((name, Failure(err)), _) =>
           throw new EvaluationException(s"Failed to evaluate parameter $name due to $err")
-      }.toMap
+      }
   }
 
   private def foundConst(const: const) = Success(Left(const))
