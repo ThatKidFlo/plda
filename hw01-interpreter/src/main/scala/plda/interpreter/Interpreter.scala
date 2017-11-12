@@ -61,8 +61,6 @@ object Interpreter {
             println(s"gonna throw $expr, because $environment")
             throw new EvaluationException(s"Unable to apply non-function value $expr to $parameters")
         }
-
-      case undef(msg) => throw new EvaluationException(msg)
     }
 
   private def evaluateParameters(parameters: Map[String, Expression],

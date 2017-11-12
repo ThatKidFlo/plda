@@ -32,5 +32,3 @@ case class λ(params: List[String], body: Expression) extends Expression {
 }
 
 case class apply(fn: Expression, parameters: Map[String, Expression]) extends Expression
-
-case class undef(message: String) extends Expression
