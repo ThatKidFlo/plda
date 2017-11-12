@@ -3,6 +3,7 @@ package plda.interpreter
 import plda.ast._
 import plda.interpreter.exception.EvaluationException
 
+import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -21,12 +22,14 @@ object Interpreter {
       case eval(name) =>
         val evaluatedSymbol = environment.get(name)
         println(s"Searched for $name in $environment, found $evaluatedSymbol")
-        evaluatedSymbol.map(evaluated => interpretInternal(evaluated, environment)).getOrElse(failed(s"symbol $name was not found in $environment"))
+        evaluatedSymbol
+          .map(evaluated => interpretInternal(evaluated, environment))
+          .getOrElse(failed(s"symbol $name was not found in $environment"))
 
       case op(lhs, binaryOperator, rhs) =>
         for {
-          evaluatedLhs <- interpret(lhs) if evaluatedLhs.isInstanceOf[Left[const, λ]]
-          evaluatedRhs <- interpret(rhs)
+          evaluatedLhs <- interpretInternal(lhs, environment) if evaluatedLhs.isInstanceOf[Left[const, λ]]
+          evaluatedRhs <- interpretInternal(rhs, environment)
         } yield {
           evaluatedLhs -> evaluatedRhs match {
             case (Left(x1), Left(x2)) => Left(binaryOperator.apply(x1.value, x2.value))
@@ -39,24 +42,21 @@ object Interpreter {
         }
 
       case `if`(condition, trueBranch, falseBranch) =>
-        interpret(condition) match {
-          case Success(Left(const(0))) => interpret(falseBranch)
-          case _ => interpret(trueBranch)
+        interpretInternal(condition, environment) match {
+          case Success(Left(const(0))) => interpretInternal(falseBranch, environment)
+          case _ => interpretInternal(trueBranch, environment)
         }
 
       case let(bindings, body) =>
-        println(s"added $bindings to $environment")
         interpretInternal(body, environment ++ bindings)
 
-      case λ(params, body, closure) =>
-        foundLambda(λ(List(), body, closure))
+      case λ(_, body) =>
+        foundLambda(λ(List(), body))
 
       case apply(lambda, parameters) =>
-        println(s"applying $parameters")
         interpretInternal(lambda, environment).flatMap {
-          case Right(λ(_, body, closure)) =>
-            println(s"interpreting $body")
-            interpretInternal(body, environment ++ parameters ++ closure)
+          case Right(λ(_, body)) =>
+            interpretInternal(body, environment ++ evaluateParameters(parameters, environment))
           case Left(expr) =>
             println(s"gonna throw $expr, because $environment")
             throw new EvaluationException(s"Unable to apply non-function value $expr to $parameters")
@@ -64,6 +64,22 @@ object Interpreter {
 
       case undef(msg) => throw new EvaluationException(msg)
     }
+
+  private def evaluateParameters(parameters: Map[String, Expression],
+                                 environment: Map[String, Expression]): Map[String, Expression] = {
+    parameters
+      .map {
+        case (name, expr) => name -> interpretInternal(expr, environment)
+      }
+      .foldRight(mutable.Map[String, Expression]()) {
+        case ((name, Success(Left(constant))), env) => env + (name -> constant)
+        case ((name, Success(Right(function))), env) => env + (name -> function)
+
+          //TODO:: could be more permissive here, in case the formal parameter is not actually used
+        case ((name, Failure(err)), _) =>
+          throw new EvaluationException(s"Failed to evaluate parameter $name due to $err")
+      }.toMap
+  }
 
   private def foundConst(const: const) = Success(Left(const))
 

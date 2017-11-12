@@ -17,7 +17,7 @@ case class `if`(condition: Expression, trueBranch: Expression, falseBranch: Expr
 
 case class let(bindings: Map[String, Expression], body: Expression) extends Expression
 
-case class λ(params: List[String], body: Expression, environment: Map[String, Expression] = Map()) extends Expression
+case class λ(params: List[String], body: Expression) extends Expression
 
 case class apply(fn: Expression, parameters: Map[String, Expression]) extends Expression
 
