@@ -8,7 +8,7 @@ import plda.interpreter.Interpreter._
   * @author Florin-Gabriel Barbuceanu, florin.barbuceanu@sap.com
   * @since 08/11/2017
   */
-object HelloWorld {
+object InterpreterTests {
   def main(args: Array[String]): Unit = {
     println {
       interpret(`if`(op(const(1), Eq, const(1)), const(1), const(2)))

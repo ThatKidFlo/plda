@@ -3,6 +3,7 @@ package plda.interpreter
 import plda.ast._
 import plda.interpreter.exception.EvaluationException
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
@@ -50,8 +51,8 @@ object Interpreter {
       case let(bindings, body) =>
         interpretInternal(body, environment ++ bindings)
 
-      case λ(_, body) =>
-        foundLambda(λ(List(), body))
+      case λ(params, body) =>
+        foundLambda(λ(params, body))
 
       case apply(lambda, parameters) =>
         interpretInternal(lambda, environment).flatMap {
