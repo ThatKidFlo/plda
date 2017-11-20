@@ -1,7 +1,6 @@
 package plda
 
-import plda.ast.expressionDSL._
-import plda.ast.{let => letClass, _}
+import plda.dsl.expressionDecorators._
 import plda.interpreter.Interpreter.interpret
 
 /**
@@ -13,8 +12,8 @@ object DslTests {
   def main(args: Array[String]): Unit = {
     println {
       interpret {
-        let("x" -> const(42), "y" -> const(10)) in {
-          op(eval("x"), Add, eval("y"))
+        let("x" -> 42, "y" -> 10) in {
+          eval("x") + eval("y")
         }
       }
     }
@@ -31,15 +30,14 @@ object DslTests {
 
     println {
       interpret {
-        let("fact" -> λ(List("n"), {
-          iff(op(eval("n"), Eq, const(0))) {
-            const(1)
+        let("fact" -> (λ("n") in {
+          iff(eval("n") === 0) {
+            1
           } otherwise {
-            op(eval("n"), Mul, apply(eval("fact"), Map("n" -> op(eval("n"), Sub, const(1)))))
+            eval("n") * eval("fact").apply("n" -> (eval("n") - 1))
           }
-        }
-        )) in {
-          apply(eval("fact"), Map("n" -> const(20)))
+        })) in {
+          eval("fact").apply("n" -> 5)
         }
       }
     }
