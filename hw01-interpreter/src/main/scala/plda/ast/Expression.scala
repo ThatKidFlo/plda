@@ -1,5 +1,7 @@
 package plda.ast
 
+import scala.language.implicitConversions
+
 /**
   *
   * @author Florin-Gabriel Barbuceanu, florin.barbuceanu@sap.com
@@ -32,3 +34,32 @@ case class λ(params: List[String], body: Expression) extends Expression {
 }
 
 case class apply(fn: Expression, parameters: Map[String, Expression]) extends Expression
+
+
+object expressionDSL {
+  case class ifIntermediary(condition: Expression) {
+    def apply(trueBranch: Expression): elseIntermediary = {
+      elseIntermediary(condition, trueBranch)
+    }
+  }
+
+  case class elseIntermediary(condition: Expression, trueBranch: Expression) {
+    def otherwise(falseBranch: Expression): `if` = {
+      `if`(condition, trueBranch, falseBranch)
+    }
+  }
+
+  case class letIntermediary(bindings: (String, Expression)*) {
+    def in(body: Expression): let = {
+      plda.ast.let(bindings.toMap, body)
+    }
+  }
+
+  implicit def intToConst(int: Int): const = const(int)
+
+  def let(bindings: (String, Expression)*): letIntermediary = letIntermediary(bindings: _*)
+
+  def iff(condition: Expression): ifIntermediary = {
+    ifIntermediary(condition)
+  }
+}
