@@ -3,6 +3,7 @@ package plda.interpreter
 import plda.ast._
 import plda.config.Constants.Logging._
 import plda.config.Constants.{Interpreter => InterpreterConfig}
+import plda.interpreter.api.{Constant, EvaluationResult, Lambda}
 import plda.interpreter.exception.EvaluationException
 
 import scala.util.{Failure, Success, Try}
@@ -13,9 +14,9 @@ import scala.util.{Failure, Success, Try}
   * @since 08/11/2017
   */
 object Interpreter {
-  def interpret(program: Expression): Try[Either[const, λ]] = interpretInternal(program, Map())
+  def interpret(program: Expression): Try[EvaluationResult] = interpretInternal(program, Map())
 
-  private def interpretInternal(program: Expression, environment: Map[String, Expression]): Try[Either[const, λ]] =
+  private def interpretInternal(program: Expression, environment: Map[String, Expression]): Try[EvaluationResult] =
     program match {
       case self@`const`(_) =>
         foundConst(self)
@@ -28,12 +29,12 @@ object Interpreter {
           .getOrElse(failed(s"${ERROR_LEVEL}symbol $name was not found in ${prettify(environment)}"))
 
       case op(lhs, binaryOperator, rhs) =>
-        val triedOpEvaluation: Try[Either[const, λ]] = for {
-          evaluatedLhs <- interpretInternal(lhs, environment) if evaluatedLhs.isInstanceOf[Left[const, λ]]
+        val triedOpEvaluation: Try[EvaluationResult] = for {
+          evaluatedLhs <- interpretInternal(lhs, environment) if evaluatedLhs.isInstanceOf[Constant]
           evaluatedRhs <- interpretInternal(rhs, environment)
         } yield {
           evaluatedLhs -> evaluatedRhs match {
-            case (Left(x1), Left(x2)) => Left(binaryOperator.apply(x1.value, x2.value))
+            case (Constant(x1), Constant(x2)) => Constant(binaryOperator.apply(x1.value, x2.value))
             case _ => throw new EvaluationException(
               s"${ERROR_LEVEL}Unable to compare non-numeric values:: left-hand side: <$evaluatedLhs>, " +
                 s"right-hand side: <$evaluatedRhs>")
@@ -50,7 +51,7 @@ object Interpreter {
 
       case `if`(condition, trueBranch, falseBranch) =>
         interpretInternal(condition, environment) match {
-          case Success(Left(const(0))) =>
+          case Success(Constant(const(0))) =>
             debug(s"Condition $condition evaluated to false, will evaluate the false branch")
             interpretInternal(falseBranch, environment)
           case _ =>
@@ -66,9 +67,9 @@ object Interpreter {
 
       case apply(lambda, parameters) =>
         interpretInternal(lambda, environment).flatMap {
-          case Right(λ(_, body)) =>
+          case Lambda(λ(_, body)) =>
             interpretInternal(body, environment ++ evaluateParameters(parameters, environment))
-          case Left(expr) =>
+          case Constant(expr) =>
             debug(s"Interpretation will terminated, because non-function value $expr " +
               s"cannot be applied to ${prettify(parameters)}")
             throw new EvaluationException(s"Unable to apply non-function value $expr to ${prettify(parameters)}")
@@ -83,8 +84,8 @@ object Interpreter {
         case (name, expr) => name -> interpretInternal(expr, environment)
       }
       .foldRight(Map[String, Expression]()) {
-        case ((name, Success(Left(constant))), env) => env + (name -> constant)
-        case ((name, Success(Right(function))), env) => env + (name -> function)
+        case ((name, Success(Constant(constant))), env) => env + (name -> constant)
+        case ((name, Success(Lambda(function))), env) => env + (name -> function)
 
         //TODO:: could be more permissive here, in case the formal parameter is not actually used
         case ((name, Failure(err)), _) =>
@@ -92,9 +93,9 @@ object Interpreter {
       }
   }
 
-  private def foundConst(const: const) = Success(Left(const))
+  private def foundConst(const: const) = Success(Constant(const))
 
-  private def foundLambda(lambda: λ) = Success(Right(lambda))
+  private def foundLambda(lambda: λ) = Success(Lambda(lambda))
 
   private def failed(message: String) = Failure(new EvaluationException(s"Program crashed:: $message"))
 

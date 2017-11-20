@@ -3,6 +3,7 @@ package plda.interpreter
 import org.scalatest.{FlatSpec, Matchers}
 import plda.ast._
 import plda.interpreter.Interpreter._
+import plda.interpreter.api.{Constant, EvaluationResult, Lambda}
 import plda.interpreter.exception.EvaluationException
 
 import scala.util.{Success, Try}
@@ -73,16 +74,14 @@ class InterpreterSpec extends FlatSpec with Matchers {
       })
     }
 
-    expectLambda {
+    val factorial = expectLambda {
       triedInterpretedFact
     }
-
-    val factorial = triedInterpretedFact.get.right.get
 
     interpret {
       apply(factorial, Map("n" -> const(10), "fact" -> factorial))
     } should be {
-      Success(Left(const(3628800)))
+      Success(Constant(const(3628800)))
     }
   }
 
@@ -111,15 +110,15 @@ class InterpreterSpec extends FlatSpec with Matchers {
     expectConst(120, evaluatedFactorial)
   }
 
-  private def expectConst(value: Int, interpretationResult: Try[Either[const, λ]]) = {
+  private def expectConst(value: Int, interpretationResult: Try[EvaluationResult]) = {
     assert(interpretationResult.isInstanceOf[Success[_]])
-    assert(interpretationResult.get.isInstanceOf[Left[_, _]])
-    assert(interpretationResult.get.left.get.value == value)
+    assert(interpretationResult.get.isInstanceOf[Constant])
+    assert(interpretationResult.get.asInstanceOf[Constant].n.value == value)
   }
 
-  private def expectLambda(interpretationResult: Try[Either[const, λ]]): λ = {
+  private def expectLambda(interpretationResult: Try[EvaluationResult]): λ = {
     assert(interpretationResult.isInstanceOf[Success[_]])
-    assert(interpretationResult.get.isInstanceOf[Right[_, _]])
-    interpretationResult.get.right.get
+    assert(interpretationResult.get.isInstanceOf[Lambda])
+    interpretationResult.get.asInstanceOf[Lambda].fn
   }
 }

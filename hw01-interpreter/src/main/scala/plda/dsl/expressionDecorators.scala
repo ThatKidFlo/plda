@@ -2,6 +2,8 @@ package plda.dsl
 
 import plda.ast._
 
+import scala.language.implicitConversions
+
 /**
   *
   * @author Florin-Gabriel Barbuceanu, florin.barbuceanu@sap.com
