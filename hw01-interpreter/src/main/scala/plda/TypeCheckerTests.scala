@@ -3,7 +3,7 @@ package plda
 import plda.TestExpressions._
 import plda.dsl.expressionDecorators._
 import plda.typechecker.TypeChecker.checkTypes
-import plda.types.Number
+import plda.types.{Function, Number}
 
 /**
   *
@@ -50,9 +50,9 @@ object TypeCheckerTests {
 
     println {
       checkTypes {
-        λ("x" ofType Number(), "y" ofType Number()) in {
+        λ("x" ofType Number(), "y" ofType Number(), "z" ofType Function(Map("n" -> Number()), Number())) in {
           eval("x") + eval("y")
-        }
+        } apply("x" -> 5, "y" -> 6, "z" -> (λ() in {eval("")}))
       }
     }
   }
