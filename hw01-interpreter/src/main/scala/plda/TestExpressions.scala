@@ -1,6 +1,8 @@
 package plda
 
 import plda.ast._
+import plda.lang.TypeOf
+import plda.types.Number
 
 /**
   *
@@ -13,12 +15,12 @@ object TestExpressions {
   def if1Eq1Then1: Expression = `if`(op(const(1), Eq, const(1)), const(1), const(2))
 
   def if1Eq1Then42: Expression = `if`(op(const(1), Eq, const(1)),
-    apply(λ(List("x"), eval("x")), Map("x" -> const(42)))
+    apply(λ(List(TypeOf("x", Number())), eval("x")), Map("x" -> const(42)))
     , const(2))
 
   def if1Eq2Then2Else42: Expression = `if`(op(const(2), Eq, const(1)),
     const(2),
-    apply(λ(List("x"), eval("x")), Map("x" -> const(42))))
+    apply(λ(List(TypeOf("x", Number())), eval("x")), Map("x" -> const(42))))
 
   def letNEq42InEvalNMinus1: Expression = let(Map("n" -> const(42)), op(eval("n"), Sub, const(1)))
 
@@ -29,7 +31,7 @@ object TestExpressions {
     factorialDefinition, apply(eval("fact"), Map("n" -> const(20)))
   )
 
-  def factorialDefinition: Map[String, Expression] = Map("fact" -> λ(List("n"), {
+  def factorialDefinition: Map[String, Expression] = Map("fact" -> λ(List(TypeOf("n", Number())), {
     val n = eval("n")
     `if`(op(n, Eq, const(0)),
       const(1),

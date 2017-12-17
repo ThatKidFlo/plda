@@ -1,6 +1,8 @@
 package plda.dsl
 
 import plda.ast._
+import plda.lang.TypeOf
+import plda.types.Type
 
 import scala.language.implicitConversions
 
@@ -29,7 +31,7 @@ object expressionDecorators {
     }
   }
 
-  case class lambdaIntermediary(freeVariables: String*) {
+  case class lambdaIntermediary(freeVariables: TypeOf*) {
     def in(body: Expression): Expression = plda.ast.λ(freeVariables.toList, body)
   }
 
@@ -53,7 +55,13 @@ object expressionDecorators {
 
   def iff(condition: Expression): ifIntermediary = ifIntermediary(condition)
 
-  def λ(freeVariables: String*): lambdaIntermediary = lambdaIntermediary(freeVariables: _*)
+  def λ(freeVariables: TypeOf*): lambdaIntermediary = lambdaIntermediary(freeVariables: _*)
 
   def eval(variable: String): Expression = plda.ast.eval(variable)
+
+  implicit class RichSymbol(string: String) {
+    def ofType(typeOf: Type): TypeOf = {
+      TypeOf(string, typeOf)
+    }
+  }
 }

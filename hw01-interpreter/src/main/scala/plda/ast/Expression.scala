@@ -1,5 +1,7 @@
 package plda.ast
 
+import plda.lang.TypeOf
+
 import scala.language.implicitConversions
 
 /**
@@ -27,7 +29,7 @@ case class `if`(condition: Expression, trueBranch: Expression, falseBranch: Expr
 
 case class let(bindings: Map[String, Expression], body: Expression) extends Expression
 
-case class λ(params: List[String], body: Expression) extends Expression {
+case class λ(params: List[TypeOf], body: Expression) extends Expression {
   override def toString: String = {
     s"""λ(${params.mkString(",")}) => { $body }""".stripMargin
   }

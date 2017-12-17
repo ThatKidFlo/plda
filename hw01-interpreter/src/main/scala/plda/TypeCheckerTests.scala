@@ -1,7 +1,9 @@
 package plda
 
 import plda.TestExpressions._
+import plda.dsl.expressionDecorators._
 import plda.typechecker.TypeChecker.checkTypes
+import plda.types.Number
 
 /**
   *
@@ -10,32 +12,48 @@ import plda.typechecker.TypeChecker.checkTypes
   */
 object TypeCheckerTests {
   def main(args: Array[String]): Unit = {
-//    println {
-//      s"RESULT:: ${checkTypes(fnEq2)}"
-//    }
-//
-//    println {
-//      s"RESULT:: ${checkTypes(if1Eq1Then1)}"
-//    }
-//
-//    println {
-//      s"RESULT:: ${checkTypes(if1Eq1Then1)}"
-//    }
-//
-//    println {
-//      s"RESULT:: ${checkTypes(if1Eq2Then2Else42)}"
-//    }
-//
-//    println {
-//      s"RESULT:: ${checkTypes(letNEq42InEvalNMinus1)}"
-//    }
-
     println {
-      s"RESULT:: ${checkTypes(factorial)}"
+      checkTypes(fnEq2)
     }
 
     println {
-      s"RESULT:: ${checkTypes(factorialDefinition("fact"))}"
+      checkTypes(if1Eq1Then1)
+    }
+
+    println {
+      checkTypes(if1Eq1Then1)
+    }
+
+    println {
+      checkTypes(if1Eq2Then2Else42)
+    }
+
+    println {
+      checkTypes(letNEq42InEvalNMinus1)
+    }
+
+    println {
+      checkTypes(factorial)
+    }
+
+    println {
+      checkTypes(factorialDefinition("fact"))
+    }
+
+    println {
+      checkTypes {
+        λ("x" ofType Number(), "y" ofType Number()) in {
+          eval("x") + eval("y")
+        } apply("x" -> 5, "y" -> 10)
+      }
+    }
+
+    println {
+      checkTypes {
+        λ("x" ofType Number(), "y" ofType Number()) in {
+          eval("x") + eval("y")
+        }
+      }
     }
   }
 }

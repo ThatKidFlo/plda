@@ -1,6 +1,6 @@
 package plda.typechecker
 
-import plda.ast._
+import plda.ast.{λ, _}
 import plda.types.{Any, Function, Number, Type, TypeError}
 
 /**
@@ -19,7 +19,11 @@ object TypeChecker {
     expr match {
       case const(_) => Number()
 
-      case eval(symbol) => typeUniverse.getOrElse(symbol, TypeError(s"Undefined variable found $symbol"))
+      case eval(symbol) =>
+        println {
+          s"TYPE UNIVERSE IN EVAL IS:: $typeUniverse"
+        }
+        typeUniverse.getOrElse(symbol, TypeError(s"Undefined variable found $symbol"))
 
       case op(lhsExpr, _, rhsExpr) =>
         val lhsType = checkTypesInCurrentUniverse(lhsExpr)
@@ -42,9 +46,9 @@ object TypeChecker {
         checkTypesInternal(typeUniverse ++ typeUniverseDelta)(body)
 
       case λ(params, body) =>
-        val paramTypes = params.map(_ -> Any()).toMap
-        println(s">> current universe:: $typeUniverse")
-        println(s">> param types:: $paramTypes")
+        val paramTypes = params
+          .map(typeAnnotation => typeAnnotation.symbol -> typeAnnotation.typeOf)
+          .toMap
         Function(paramTypes, checkTypesInCurrentUniverse(body))
 
       case apply(fn, parameters) =>
@@ -54,7 +58,18 @@ object TypeChecker {
         }
         val functionType = checkTypesInternal(typeUniverse ++ typeUniverseDelta)(fn)
         if(!functionType.isInstanceOf[Function]) TypeError(s"Non-function type cannot be applied: $functionType")
-        else checkTypesInternal(typeUniverse ++ typeUniverseDelta)(fn)
+        else {
+          println {
+            s"typeUniverseDelta TYPE IS ${typeUniverse ++ typeUniverseDelta}"
+          }
+
+          fn match {
+            case func: λ =>
+              checkTypesInternal(typeUniverse ++ typeUniverseDelta)(func.body)
+            case _ =>
+              checkTypesInternal(typeUniverse ++ typeUniverseDelta)(fn)
+          }
+        }
     }
   }
 

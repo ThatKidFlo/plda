@@ -2,6 +2,7 @@ package plda
 
 import plda.dsl.expressionDecorators._
 import plda.interpreter.Interpreter.interpret
+import plda.types.Number
 
 /**
   *
@@ -30,7 +31,7 @@ object DslTests {
 
     println {
       interpret {
-        let("fact" -> (λ("n") in {
+        let("fact" -> (λ("n" ofType Number()) in {
           iff(eval("n") === 0) {
             1
           } otherwise {

@@ -20,4 +20,3 @@ case class Any() extends Type {
 }
 
 case class TypeError(explanation: String) extends Type
-
