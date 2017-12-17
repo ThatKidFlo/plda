@@ -21,7 +21,7 @@ object DslTests {
     println {
       interpret {
         iff(1) {
-          42
+          42 + 45
         } otherwise {
           0
         }
@@ -38,6 +38,14 @@ object DslTests {
           }
         })) in {
           eval("fact").apply("n" -> 5)
+        }
+      }
+    }
+
+    println {
+      interpret {
+        let("n" -> 42) in {
+          eval("n") apply ("n" -> 42)
         }
       }
     }

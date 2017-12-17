@@ -8,7 +8,7 @@ package plda.config
 object Constants {
 
   object Interpreter {
-    val DEBUG: Boolean = true
+    val DEBUG: Boolean = false
   }
 
   object Logging {
